@@ -1,2 +1,1 @@
-# vscode-typescript-eslint-prettier-template
-
+# wallet-scanner
