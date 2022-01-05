@@ -1,5 +1,7 @@
-import { App } from './app';
+import { ethers } from 'ethers';
 
-const app = new App('amd');
-
-console.log(app.getName());
+(async () => {
+  console.log('start');
+  const provider = new ethers.providers.EtherscanProvider();
+  console.log(provider);
+})();
