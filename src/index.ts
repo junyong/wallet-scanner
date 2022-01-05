@@ -17,15 +17,12 @@ import { Info } from './types';
     while (true) {
       const randomWallet = ethers.Wallet.createRandom();
       const wallet = randomWallet.connect(provider);
-      // console.log(wallet);
       const balance = await wallet.getBalance();
-      // console.log(`balance = ${balance}`);
       const transactionCount = await wallet.getTransactionCount();
-      // console.log(`transactionCount = ${transactionCount}`);
+      console.log(`${wallet.address} - ${balance} - ${transactionCount}`);
 
       if (!balance.isZero() || transactionCount > 0) {
         const mnemonic = wallet.mnemonic;
-        // console.log(mnemonic.phrase);
         const info: Info = {
           address: wallet.address,
           balance: balance.toNumber(),
