@@ -13,8 +13,8 @@ import { Info } from './types';
   );
 
   const timer = (ms: number) => new Promise((res) => setTimeout(res, ms));
-  try {
-    while (true) {
+  while (true) {
+    try {
       const randomWallet = ethers.Wallet.createRandom();
       const wallet = randomWallet.connect(provider);
       const balance = await wallet.getBalance();
@@ -33,8 +33,9 @@ import { Info } from './types';
         await db.get('infos').push(info).write();
       }
       await timer(500);
+    } catch (error) {
+      console.error(error);
+      await timer(1000);
     }
-  } catch (error) {
-    console.error(error);
   }
 })();
