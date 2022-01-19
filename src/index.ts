@@ -32,7 +32,7 @@ import { Info } from './types';
         console.log(info);
         await db.get('infos').push(info).write();
       }
-      await timer(500);
+      await timer(300);
     } catch (error) {
       console.error(error);
       await timer(1000);
