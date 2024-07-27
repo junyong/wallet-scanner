@@ -1,4 +1,3 @@
-/* eslint-disable no-constant-condition */
 import { ethers } from 'ethers';
 import { env } from './env';
 import getDb from './lowdb';
@@ -7,13 +6,14 @@ import { Info } from './types';
 (async () => {
   console.log('start');
   const db = await getDb();
-  const provider = new ethers.providers.EtherscanProvider(
-    undefined,
-    env.ETHERSCAN_APIKEY,
-  );
+  const provider = new ethers.providers.JsonRpcProvider(env.JSON_RPC_URL, {
+    name: 'mainnet',
+    chainId: 1,
+  });
 
   const timer = (ms: number) => new Promise((res) => setTimeout(res, ms));
-  while (true) {
+  const condition = true;
+  while (condition) {
     try {
       const randomWallet = ethers.Wallet.createRandom();
       const wallet = randomWallet.connect(provider);
@@ -29,10 +29,9 @@ import { Info } from './types';
           transactionCount,
           mnemonic: mnemonic.phrase,
         };
-        console.log(info);
+        console.log('Success! Info:', info);
         await db.get('infos').push(info).write();
       }
-      await timer(300);
     } catch (error) {
       console.error(error);
       await timer(1000);
