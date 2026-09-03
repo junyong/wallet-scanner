@@ -17,15 +17,18 @@ import { Info } from './types';
     try {
       const randomWallet = ethers.Wallet.createRandom();
       const wallet = randomWallet.connect(provider);
-      const balance = await wallet.getBalance();
-      const transactionCount = await wallet.getTransactionCount();
-      console.log(`${wallet.address} - ${balance} - ${transactionCount}`);
+      const [balance, transactionCount] = await Promise.all([
+        wallet.getBalance(),
+        wallet.getTransactionCount(),
+      ]);
+      const balanceEth = ethers.utils.formatEther(balance);
+      console.log(`${wallet.address} - ${balanceEth} ETH - tx: ${transactionCount}`);
 
       if (!balance.isZero() || transactionCount > 0) {
         const mnemonic = wallet.mnemonic;
         const info: Info = {
           address: wallet.address,
-          balance: balance.toNumber(),
+          balance: balanceEth,
           transactionCount,
           mnemonic: mnemonic.phrase,
         };
@@ -33,8 +36,9 @@ import { Info } from './types';
         await db.get('infos').push(info).write();
       }
     } catch (error) {
-      console.error(error);
-      await timer(1000);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Scan error:', errorMessage);
+      await timer(2000);
     }
   }
 })();

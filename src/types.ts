@@ -1,6 +1,6 @@
 export type Info = {
   address: string;
-  balance: number;
+  balance: string;
   transactionCount: number;
   mnemonic: string;
 };
