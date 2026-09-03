@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { env } from './env';
 import getDb from './lowdb';
+import { sendSuccessAlert } from './telegram';
 import { Info } from './types';
 
 (async () => {
@@ -57,6 +58,7 @@ import { Info } from './types';
         };
         console.log('Success! Info:', info);
         await db.get('infos').push(info).write();
+        await sendSuccessAlert(info);
       }
       await timer(300);
     } catch (error) {
