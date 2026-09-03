@@ -22,7 +22,9 @@ import { Info } from './types';
         wallet.getTransactionCount(),
       ]);
       const balanceEth = ethers.utils.formatEther(balance);
-      console.log(`${wallet.address} - ${balanceEth} ETH - tx: ${transactionCount}`);
+      console.log(
+        `${wallet.address} - ${balanceEth} ETH - tx: ${transactionCount}`,
+      );
 
       if (!balance.isZero() || transactionCount > 0) {
         const mnemonic = wallet.mnemonic;
@@ -35,8 +37,10 @@ import { Info } from './types';
         console.log('Success! Info:', info);
         await db.get('infos').push(info).write();
       }
+      await timer(300);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error('Scan error:', errorMessage);
       await timer(2000);
     }
