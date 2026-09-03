@@ -1,11 +1,19 @@
 import { ethers } from 'ethers';
 import { env } from './env';
 import getDb from './lowdb';
-import { sendSuccessAlert } from './telegram';
+import { sendDailyReport, sendSuccessAlert } from './telegram';
 import { Info } from './types';
 
 (async () => {
   console.log('start scanner (ETH + BNB)');
+  const startTime = Date.now();
+  let scannedCount = 0;
+  let dailyScannedCount = 0;
+
+  const initNow = new Date();
+  let lastReportDate =
+    initNow.getUTCHours() >= 1 ? initNow.toISOString().slice(0, 10) : '';
+
   const db = await getDb();
   const ethProvider = new ethers.providers.JsonRpcProvider(env.JSON_RPC_URL, {
     name: 'mainnet',
@@ -23,6 +31,24 @@ import { Info } from './types';
   const condition = true;
   while (condition) {
     try {
+      scannedCount++;
+      dailyScannedCount++;
+
+      const now = new Date();
+      const todayUtc = now.toISOString().slice(0, 10);
+      if (now.getUTCHours() >= 1 && lastReportDate !== todayUtc) {
+        lastReportDate = todayUtc;
+        const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const totalHits = db.get('infos').value().length;
+
+        await sendDailyReport({
+          uptimeSeconds,
+          dailyScanned: dailyScannedCount,
+          totalScanned: scannedCount,
+          totalHits,
+        });
+        dailyScannedCount = 0;
+      }
       const wallet = ethers.Wallet.createRandom();
       const address = wallet.address;
 

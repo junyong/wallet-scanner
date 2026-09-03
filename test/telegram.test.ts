@@ -1,6 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { sendSuccessAlert } from '../src/telegram';
+import {
+  formatUptime,
+  sendDailyReport,
+  sendSuccessAlert,
+} from '../src/telegram';
 import { env } from '../src/env';
 import { Info } from '../src/types';
 
@@ -14,7 +18,14 @@ describe('Telegram Alert Service', () => {
     mnemonic: 'test test test test test test test test test test test junk',
   };
 
-  it('토큰이나 챗 ID가 누락되면 false를 반환하고 에러를 던지지 않아야 한다', async () => {
+  it('should format seconds into human readable uptime string', () => {
+    assert.strictEqual(formatUptime(45), '45s');
+    assert.strictEqual(formatUptime(125), '2m 5s');
+    assert.strictEqual(formatUptime(3665), '1h 1m 5s');
+    assert.strictEqual(formatUptime(90061), '1d 1h 1m 1s');
+  });
+
+  it('should return false without throwing when token or chatId is missing', async () => {
     const originalToken = env.TELEGRAM_BOT_TOKEN;
     const originalChatId = env.TELEGRAM_CHAT_ID;
 
@@ -22,18 +33,26 @@ describe('Telegram Alert Service', () => {
       env.TELEGRAM_BOT_TOKEN = undefined;
       env.TELEGRAM_CHAT_ID = undefined;
 
-      const result = await sendSuccessAlert(mockWallet);
-      assert.strictEqual(result, false);
+      const alertResult = await sendSuccessAlert(mockWallet);
+      assert.strictEqual(alertResult, false);
+
+      const reportResult = await sendDailyReport({
+        uptimeSeconds: 3600,
+        dailyScanned: 1000,
+        totalScanned: 1000,
+        totalHits: 0,
+      });
+      assert.strictEqual(reportResult, false);
     } finally {
       env.TELEGRAM_BOT_TOKEN = originalToken;
       env.TELEGRAM_CHAT_ID = originalChatId;
     }
   });
 
-  it('환경 변수가 설정되어 있으면 텔레그램 메시지를 성공적으로 전송해야 한다', async (t) => {
+  it('should send success alert when environment variables are set', async (t) => {
     if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
       t.skip(
-        '.env에 TELEGRAM_BOT_TOKEN 또는 TELEGRAM_CHAT_ID가 설정되어 있지 않아 테스트를 건너뜁니다.',
+        'Skipping test because TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not configured in .env',
       );
       return;
     }
@@ -42,7 +61,28 @@ describe('Telegram Alert Service', () => {
     assert.strictEqual(
       result,
       true,
-      '텔레그램 메시지 전송 결과가 true여야 합니다.',
+      'Telegram message delivery result should be true',
+    );
+  });
+
+  it('should send daily report when environment variables are set', async (t) => {
+    if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+      t.skip(
+        'Skipping test because TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not configured in .env',
+      );
+      return;
+    }
+
+    const result = await sendDailyReport({
+      uptimeSeconds: 86400,
+      dailyScanned: 154200,
+      totalScanned: 308400,
+      totalHits: 1,
+    });
+    assert.strictEqual(
+      result,
+      true,
+      'Daily report delivery result should be true',
     );
   });
 });
