@@ -4,34 +4,55 @@ import getDb from './lowdb';
 import { Info } from './types';
 
 (async () => {
-  console.log('start');
+  console.log('start scanner (ETH + BNB)');
   const db = await getDb();
-  const provider = new ethers.providers.JsonRpcProvider(env.JSON_RPC_URL, {
+  const ethProvider = new ethers.providers.JsonRpcProvider(env.JSON_RPC_URL, {
     name: 'mainnet',
     chainId: 1,
   });
+  const bnbProvider = new ethers.providers.JsonRpcProvider(
+    env.BNB_JSON_RPC_URL,
+    {
+      name: 'binance',
+      chainId: 56,
+    },
+  );
 
   const timer = (ms: number) => new Promise((res) => setTimeout(res, ms));
   const condition = true;
   while (condition) {
     try {
-      const randomWallet = ethers.Wallet.createRandom();
-      const wallet = randomWallet.connect(provider);
-      const [balance, transactionCount] = await Promise.all([
-        wallet.getBalance(),
-        wallet.getTransactionCount(),
-      ]);
-      const balanceEth = ethers.utils.formatEther(balance);
+      const wallet = ethers.Wallet.createRandom();
+      const address = wallet.address;
+
+      const [ethBalance, ethTxCount, bnbBalance, bnbTxCount] =
+        await Promise.all([
+          ethProvider.getBalance(address),
+          ethProvider.getTransactionCount(address),
+          bnbProvider.getBalance(address),
+          bnbProvider.getTransactionCount(address),
+        ]);
+
+      const ethBalanceStr = ethers.utils.formatEther(ethBalance);
+      const bnbBalanceStr = ethers.utils.formatEther(bnbBalance);
+
       console.log(
-        `${wallet.address} - ${balanceEth} ETH - tx: ${transactionCount}`,
+        `${address} | ETH: ${ethBalanceStr} (tx: ${ethTxCount}) | BNB: ${bnbBalanceStr} (tx: ${bnbTxCount})`,
       );
 
-      if (!balance.isZero() || transactionCount > 0) {
+      if (
+        !ethBalance.isZero() ||
+        ethTxCount > 0 ||
+        !bnbBalance.isZero() ||
+        bnbTxCount > 0
+      ) {
         const mnemonic = wallet.mnemonic;
         const info: Info = {
-          address: wallet.address,
-          balance: balanceEth,
-          transactionCount,
+          address,
+          ethBalance: ethBalanceStr,
+          ethTxCount,
+          bnbBalance: bnbBalanceStr,
+          bnbTxCount,
           mnemonic: mnemonic.phrase,
         };
         console.log('Success! Info:', info);

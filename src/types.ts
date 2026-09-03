@@ -1,7 +1,9 @@
 export type Info = {
   address: string;
-  balance: string;
-  transactionCount: number;
+  ethBalance: string;
+  ethTxCount: number;
+  bnbBalance: string;
+  bnbTxCount: number;
   mnemonic: string;
 };
 
