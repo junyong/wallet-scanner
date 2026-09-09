@@ -13,6 +13,7 @@ import { Info } from './types';
   const initNow = new Date();
   let lastReportDate =
     initNow.getUTCHours() >= 1 ? initNow.toISOString().slice(0, 10) : '';
+  let lastReportAttemptTime = 0;
 
   const db = await getDb();
   const ethProvider = new ethers.providers.JsonRpcProvider(env.JSON_RPC_URL, {
@@ -36,18 +37,39 @@ import { Info } from './types';
 
       const now = new Date();
       const todayUtc = now.toISOString().slice(0, 10);
-      if (now.getUTCHours() >= 1 && lastReportDate !== todayUtc) {
-        lastReportDate = todayUtc;
+      const isReportDue = now.getUTCHours() >= 1 && lastReportDate !== todayUtc;
+      const canRetryReport = Date.now() - lastReportAttemptTime > 5 * 60 * 1000;
+
+      if (isReportDue && canRetryReport) {
+        lastReportAttemptTime = Date.now();
+
+        const jitterMs = Math.floor(Math.random() * 30000);
+        console.log(
+          `[DailyReport] Scheduled daily report triggered. Applying jitter: ${(
+            jitterMs / 1000
+          ).toFixed(1)}s delay...`,
+        );
+        await timer(jitterMs);
+
         const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
         const totalHits = db.get('infos').value().length;
 
-        await sendDailyReport({
+        const sent = await sendDailyReport({
           uptimeSeconds,
           dailyScanned: dailyScannedCount,
           totalScanned: scannedCount,
           totalHits,
         });
-        dailyScannedCount = 0;
+
+        if (sent) {
+          lastReportDate = todayUtc;
+          dailyScannedCount = 0;
+          console.log('[DailyReport] Daily report successfully delivered.');
+        } else {
+          console.warn(
+            '[DailyReport] Failed to deliver daily report. Will retry in 5 minutes.',
+          );
+        }
       }
       const wallet = ethers.Wallet.createRandom();
       const address = wallet.address;
