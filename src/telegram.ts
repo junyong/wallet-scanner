@@ -1,6 +1,11 @@
+import dns from 'dns';
 import os from 'os';
 import { env } from './env';
 import { Info } from './types';
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 export interface DailyStats {
   uptimeSeconds: number;
@@ -96,9 +101,13 @@ async function sendTelegramMessage(
       return false;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
+      const cause =
+        err instanceof Error && 'cause' in err && err.cause
+          ? ` (cause: ${err.cause instanceof Error ? err.cause.message : JSON.stringify(err.cause)})`
+          : '';
       console.error(
         `Failed to send Telegram alert (attempt ${attempt}/${maxRetries}):`,
-        errorMsg,
+        `${errorMsg}${cause}`,
       );
       if (attempt < maxRetries) {
         await sleep(attempt * 2000);

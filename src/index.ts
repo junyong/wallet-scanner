@@ -1,8 +1,13 @@
+import dns from 'dns';
 import { ethers } from 'ethers';
 import { env } from './env';
 import getDb from './lowdb';
 import { sendDailyReport, sendSuccessAlert } from './telegram';
 import { Info } from './types';
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 (async () => {
   console.log('start scanner (ETH + BNB)');
