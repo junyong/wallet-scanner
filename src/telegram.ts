@@ -1,4 +1,5 @@
 import dns from 'dns';
+import net from 'net';
 import os from 'os';
 import { env } from './env';
 import { Info } from './types';
@@ -6,6 +7,9 @@ import { Info } from './types';
 if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
+
+// Honor IPv4-first DNS ordering instead of automatic family selection.
+net.setDefaultAutoSelectFamily(false);
 
 export interface DailyStats {
   uptimeSeconds: number;
